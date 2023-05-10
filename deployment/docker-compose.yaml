@@ -1,0 +1,62 @@
+name: smart_wallet
+services:
+  geth-bootnode:
+    image: geth-client
+    build:
+      context: .
+      args:
+        - ACCOUNT_PASSWORD=${ACCOUNT_PASSWORD}
+    container_name: geth-bootnode    
+    command:
+      --nodekeyhex=${NODE_KEY_HEX}
+      --nodiscover
+      --ipcdisable
+      --networkid=${NETWORK_ID}
+      --netrestrict="172.16.254.0/28"
+    ports:
+    - 30303:30303
+    networks:
+      priv-eth-net:
+
+  geth-rpc-endpoint:
+    env_file:
+      - .env
+    image: geth-client
+    depends_on:
+      - geth-bootnode    
+    command:
+      --bootnodes=enode://${BOOT_NODE_ENODE}@geth-bootnode:30303
+      --allow-insecure-unlock
+      --http
+      --http.addr="0.0.0.0"
+      --http.api="eth,web3,net,admin,personal"
+      --http.corsdomain="*"
+      --networkid=${NETWORK_ID}
+      --netrestrict="172.16.254.0/28"
+    ports:
+      - "8545:8545"
+    networks:
+      priv-eth-net:
+
+  geth-miner:
+    env_file:
+      - .env
+    image: geth-client
+    depends_on:
+      - geth-bootnode    
+    command:
+      --bootnodes=enode://${BOOT_NODE_ENODE}@geth-bootnode:30303
+      --mine
+      --miner.threads=1
+      --miner.etherbase=0x50752b7e9684abd7a05ba2a7beaee57ba9569969
+      --networkid=${NETWORK_ID}
+      --netrestrict="172.16.254.0/28"
+    networks:
+      priv-eth-net:
+
+networks:
+  priv-eth-net:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.16.254.0/28
