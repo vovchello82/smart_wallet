@@ -54,9 +54,8 @@ contract TokenManager {
         currentPriceInWei = _newPrice;
     }
 
-    function withdraw(uint _amount) external isOwner {
-        require(_amount > 0, "withdrawal must be > 0");
-        payable(owner).transfer(_amount);
+    function withdraw() external isOwner {
+        payable(owner).transfer(address(this).balance);
     }
 
     function tokensAvaiable() public view returns (uint) {
